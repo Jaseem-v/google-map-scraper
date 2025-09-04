@@ -5,7 +5,7 @@
   "main": "scraper-playwright.js",
   "scripts": {
     "start": "node scraper-playwright.js",
-    "server": "node server.js",
+    "server": "node server.js -p 4500",
     "test": "node test-scraper.js",
     "puppeteer": "node scraper.js"
   },
