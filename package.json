@@ -1,0 +1,27 @@
+{
+  "name": "fetch-data-to-excel",
+  "version": "1.0.0",
+  "description": "Scrape Google Maps data and save to Excel",
+  "main": "scraper-playwright.js",
+  "scripts": {
+    "start": "node scraper-playwright.js",
+    "server": "node server.js",
+    "test": "node test-scraper.js",
+    "puppeteer": "node scraper.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "playwright": "^1.54.2",
+    "puppeteer": "^21.0.0",
+    "socket.io": "^4.8.1",
+    "xlsx": "^0.18.5"
+  },
+  "keywords": [
+    "scraping",
+    "google-maps",
+    "excel"
+  ],
+  "author": "",
+  "license": "MIT"
+}

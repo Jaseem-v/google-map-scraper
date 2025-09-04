@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps Scraper</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+
+        .header {
+            background: #2c2c2c;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c2c2c;
+            font-size: 1rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #d0d0d0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2c2c2c;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(44, 44, 44, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            background: #2c2c2c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+           
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #1a1a1a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #2c2c2c;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666666;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .status-message {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #2c2c2c;
+            border-left: 4px solid #2c2c2c;
+        }
+
+        .results-container {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .results-count {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c2c2c;
+        }
+
+        .download-btn {
+            background: #666666;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #4a4a4a;
+            transform: translateY(-1px);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .results-table th {
+            background: #f5f5f5;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c2c2c;
+            border-bottom: 2px solid #d0d0d0;
+        }
+
+        .results-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            color: #666666;
+        }
+
+        .results-table tr:hover {
+            background: #f8f8f8;
+        }
+
+        .business-name {
+            font-weight: 600;
+            color: #2c2c2c;
+        }
+
+        .error-message {
+            background: #f5f5f5;
+            color: #2c2c2c;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #2c2c2c;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #2c2c2c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .example-url {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #666666;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗺️ Google Maps Scraper</h1>
+            <p>Extract business data from Google Maps </p>
+        </div>
+
+        <div class="form-container">
+            <form id="scraperForm">
+                <div class="form-group">
+                    <label for="url">Google Maps URL</label>
+                    <input 
+                        type="url" 
+                        id="url" 
+                        name="url" 
+                        placeholder="https://www.google.com/maps/search/..."
+                        required
+                    >
+                    <div class="example-url">
+                        Example: https://www.google.com/maps/search/Jumeirah+aesthetic+clinic/@25.2028961,55.1654013,13z/data=!4m2!2m1!6e1?entry=ttu&g_ep=EgoyMDI1MDcyOS4wIKXMDSoASAFQAw%3D%3D
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="maxCards">Maximum Cards to Scrape</label>
+                        <input 
+                            type="number" 
+                            id="maxCards" 
+                            name="maxCards" 
+                            placeholder="Default: 10 cards"
+                            min="1"
+                            value="10"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn" id="submitBtn">
+                            <span id="btnText">Start Scraping</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Initializing...</div>
+                <div class="status-message" id="statusMessage"></div>
+            </div>
+
+            <div class="results-container" id="resultsContainer">
+                <div class="results-header">
+                    <div class="results-count" id="resultsCount">0 results</div>
+                    <a href="#" class="download-btn" id="downloadBtn" style="display: none;">Download Excel</a>
+                </div>
+                <div id="resultsTable"></div>
+            </div>
+
+            <div class="error-message" id="errorMessage" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentData = [];
+        let currentFilename = '';
+
+        const form = document.getElementById('scraperForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const statusMessage = document.getElementById('statusMessage');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsCount = document.getElementById('resultsCount');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resultsTable = document.getElementById('resultsTable');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // WebSocket event listeners
+        socket.on('scraping-progress', (data) => {
+            updateProgress(data);
+        });
+
+        socket.on('scraping-complete', (data) => {
+            handleScrapingComplete(data);
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = document.getElementById('url').value;
+            const maxCards = document.getElementById('maxCards').value;
+            
+            if (!url.startsWith('https://www.google.com/maps/')) {
+                showError('Please enter a valid Google Maps URL');
+                return;
+            }
+
+            startScraping(url, maxCards ? parseInt(maxCards) : 10);
+        });
+
+        function startScraping(url, maxCards) {
+            // Reset UI
+            hideError();
+            hideResults();
+            showProgress();
+            setButtonLoading(true);
+            
+            // Set default maxCards to 10 if not provided or empty
+            if (!maxCards || maxCards === '') {
+                maxCards = 10;
+            }
+            
+            // Reset progress
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Initializing...';
+            statusMessage.textContent = 'Starting scraping process...';
+            
+            // Make API request
+            fetch('/scrape', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url, maxCards })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentData = data.data;
+                    currentFilename = data.filename;
+                    showResults(data.data, data.filename);
+                } else {
+                    showError(data.error || 'Scraping failed');
+                }
+            })
+            .catch(error => {
+                showError('Network error: ' + error.message);
+            })
+            .finally(() => {
+                setButtonLoading(false);
+                hideProgress();
+            });
+        }
+
+        function updateProgress(data) {
+            const { current, total, status, message } = data;
+            
+            // Update progress bar
+            if (total !== 'unlimited' && total > 0) {
+                const percentage = (current / total) * 100;
+                progressFill.style.width = percentage + '%';
+                progressText.textContent = `${current}/${total} cards processed`;
+            } else {
+                progressText.textContent = `${current} cards processed`;
+            }
+            
+            // Update status message
+            statusMessage.textContent = message;
+            
+            // Add scraped data to results if available
+            if (data.data) {
+                currentData.push(data.data);
+                updateResultsTable(currentData);
+            }
+        }
+
+        function handleScrapingComplete(data) {
+            if (data.success) {
+                currentData = data.data;
+                currentFilename = data.filename;
+                showResults(data.data, data.filename);
+            } else {
+                showError(data.error || 'Scraping failed');
+            }
+            setButtonLoading(false);
+            hideProgress();
+        }
+
+        function setButtonLoading(loading) {
+            submitBtn.disabled = loading;
+            if (loading) {
+                btnText.innerHTML = '<span class="loading-spinner"></span>Scraping...';
+            } else {
+                btnText.textContent = 'Start Scraping';
+            }
+        }
+
+        function showProgress() {
+            progressContainer.style.display = 'block';
+        }
+
+        function hideProgress() {
+            progressContainer.style.display = 'none';
+        }
+
+        function showResults(data, filename) {
+            resultsContainer.style.display = 'block';
+            updateResultsTable(data);
+            downloadBtn.href = `/download/${filename}`;
+            downloadBtn.style.display = 'inline-block';
+        }
+
+        function hideResults() {
+            resultsContainer.style.display = 'none';
+        }
+
+        function updateResultsTable(data) {
+            resultsCount.textContent = `${data.length} results`;
+            
+            if (data.length === 0) {
+                resultsTable.innerHTML = '<p>No data available</p>';
+                return;
+            }
+
+            const table = `
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Business Name</th>
+                            <th>Address</th>
+                            <th>Website</th>
+                            <th>Phone</th>
+                            <th>Plus Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(item => `
+                            <tr>
+                                <td class="business-name">${item.businessName || '-'}</td>
+                                <td>${item.address || '-'}</td>
+                                <td>${item.website || '-'}</td>
+                                <td>${item.mobile || '-'}</td>
+                                <td>${item.pincode || '-'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            resultsTable.innerHTML = table;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
